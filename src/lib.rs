@@ -4,6 +4,7 @@ use reqwest::{Method, Url};
 
 use crate::error::Res;
 mod actions;
+mod client;
 mod device;
 mod device_info;
 mod error;
@@ -12,6 +13,7 @@ mod simple_response;
 mod user_info;
 
 pub use actions::*;
+pub use client::*;
 pub use device::*;
 pub use device_info::*;
 pub use group_info::*;
