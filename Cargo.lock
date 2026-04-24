@@ -230,8 +230,10 @@ dependencies = [
  "clap",
  "reqwest",
  "serde",
+ "serde_json",
  "strum",
  "thiserror 2.0.18",
+ "url",
 ]
 
 [[package]]

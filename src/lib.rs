@@ -1,8 +1,22 @@
 #![warn(missing_docs)]
 //! The domovoy library
-use reqwest::Method;
+use reqwest::{Method, Url};
 
+use crate::error::Res;
+mod actions;
 mod device;
+mod device_info;
+mod error;
+mod group_info;
+mod simple_response;
+mod user_info;
+
+pub use actions::*;
+pub use device::*;
+pub use device_info::*;
+pub use group_info::*;
+pub use simple_response::*;
+pub use user_info::*;
 /// The host for all requests
 pub const HOST: &str = "https://api.iot.yandex.net";
 
@@ -50,9 +64,10 @@ impl Endpoint {
             _ => Method::DELETE,
         }
     }
-    /// Returns the path for a specific endpoint
-    pub fn path(&self) -> String {
-        match self {
+    /// Returns the full url for a specific endpoint
+    pub fn url(&self) -> Res<Url> {
+        let mut base = Url::parse(HOST)?;
+        let path = match self {
             Self::UserInfo => "v1.0/user/info".to_string(),
             Self::DeviceStatus { device_id } => format!("v1.0/devices/{device_id}"),
             Self::DeviceActions => "v1.0/devices/actions".to_string(),
@@ -62,6 +77,9 @@ impl Endpoint {
             Self::ScenarioActions { scenario_id } => {
                 format!("v1.0/scenarios/{scenario_id}/actions")
             }
-        }
+        };
+        base.set_path(&path);
+
+        Ok(base)
     }
 }
