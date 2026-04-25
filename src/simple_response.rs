@@ -1,10 +1,20 @@
 use serde::{Deserialize, Serialize};
 
-/// Simple response containing only status and request ID
+/// Processing status returned by every API response
+#[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum ResponseStatus {
+    /// Request processed successfully
+    Ok,
+    /// Request failed
+    Error,
+}
+
+/// Minimal response containing only status and request ID
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct SimpleResponse {
-    /// Processing status (e.g., "ok")
-    pub status: String,
-    /// Unique request identifier for logging
+    /// Processing status
+    pub status: ResponseStatus,
+    /// Unique request identifier for incident investigation
     pub request_id: String,
 }

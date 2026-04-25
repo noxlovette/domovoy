@@ -1,66 +1,277 @@
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde_json::Value;
 
-/// Represents a device in the Yandex Smart Home
+/// Device type, corresponding to `devices.types.*` values in the Yandex Smart Home API
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum DeviceType {
+    /// `devices.types.light`
+    Light,
+    /// `devices.types.socket`
+    Socket,
+    /// `devices.types.switch`
+    Switch,
+    /// `devices.types.thermostat.ac`
+    ThermostatAc,
+    /// `devices.types.thermostat`
+    Thermostat,
+    /// `devices.types.media_device.tv`
+    MediaDeviceTv,
+    /// `devices.types.media_device.tv_box`
+    MediaDeviceTvBox,
+    /// `devices.types.media_device.receiver`
+    MediaDeviceReceiver,
+    /// `devices.types.media_device`
+    MediaDevice,
+    /// `devices.types.cooking.coffee_maker`
+    CookingCoffeeMaker,
+    /// `devices.types.cooking.kettle`
+    CookingKettle,
+    /// `devices.types.cooking.multicooker`
+    CookingMulticooker,
+    /// `devices.types.cooking`
+    Cooking,
+    /// `devices.types.vacuum_cleaner`
+    VacuumCleaner,
+    /// `devices.types.washing_machine`
+    WashingMachine,
+    /// `devices.types.dishwasher`
+    Dishwasher,
+    /// `devices.types.iron`
+    Iron,
+    /// `devices.types.humidifier`
+    Humidifier,
+    /// `devices.types.purifier`
+    Purifier,
+    /// `devices.types.fan`
+    Fan,
+    /// `devices.types.pet_drinking_fountain`
+    PetDrinkingFountain,
+    /// `devices.types.pet_feeder`
+    PetFeeder,
+    /// `devices.types.sensor`
+    Sensor,
+    /// Any device type not yet covered by a named variant
+    Other(String),
+}
+
+impl Serialize for DeviceType {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        serializer.serialize_str(match self {
+            Self::Light => "devices.types.light",
+            Self::Socket => "devices.types.socket",
+            Self::Switch => "devices.types.switch",
+            Self::ThermostatAc => "devices.types.thermostat.ac",
+            Self::Thermostat => "devices.types.thermostat",
+            Self::MediaDeviceTv => "devices.types.media_device.tv",
+            Self::MediaDeviceTvBox => "devices.types.media_device.tv_box",
+            Self::MediaDeviceReceiver => "devices.types.media_device.receiver",
+            Self::MediaDevice => "devices.types.media_device",
+            Self::CookingCoffeeMaker => "devices.types.cooking.coffee_maker",
+            Self::CookingKettle => "devices.types.cooking.kettle",
+            Self::CookingMulticooker => "devices.types.cooking.multicooker",
+            Self::Cooking => "devices.types.cooking",
+            Self::VacuumCleaner => "devices.types.vacuum_cleaner",
+            Self::WashingMachine => "devices.types.washing_machine",
+            Self::Dishwasher => "devices.types.dishwasher",
+            Self::Iron => "devices.types.iron",
+            Self::Humidifier => "devices.types.humidifier",
+            Self::Purifier => "devices.types.purifier",
+            Self::Fan => "devices.types.fan",
+            Self::PetDrinkingFountain => "devices.types.pet_drinking_fountain",
+            Self::PetFeeder => "devices.types.pet_feeder",
+            Self::Sensor => "devices.types.sensor",
+            Self::Other(s) => s,
+        })
+    }
+}
+
+impl<'de> Deserialize<'de> for DeviceType {
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let s = String::deserialize(deserializer)?;
+        Ok(match s.as_str() {
+            "devices.types.light" => Self::Light,
+            "devices.types.socket" => Self::Socket,
+            "devices.types.switch" => Self::Switch,
+            // More-specific subtypes must be matched before their prefix
+            "devices.types.thermostat.ac" => Self::ThermostatAc,
+            "devices.types.thermostat" => Self::Thermostat,
+            "devices.types.media_device.tv" => Self::MediaDeviceTv,
+            "devices.types.media_device.tv_box" => Self::MediaDeviceTvBox,
+            "devices.types.media_device.receiver" => Self::MediaDeviceReceiver,
+            "devices.types.media_device" => Self::MediaDevice,
+            "devices.types.cooking.coffee_maker" => Self::CookingCoffeeMaker,
+            "devices.types.cooking.kettle" => Self::CookingKettle,
+            "devices.types.cooking.multicooker" => Self::CookingMulticooker,
+            "devices.types.cooking" => Self::Cooking,
+            "devices.types.vacuum_cleaner" => Self::VacuumCleaner,
+            "devices.types.washing_machine" => Self::WashingMachine,
+            "devices.types.dishwasher" => Self::Dishwasher,
+            "devices.types.iron" => Self::Iron,
+            "devices.types.humidifier" => Self::Humidifier,
+            "devices.types.purifier" => Self::Purifier,
+            "devices.types.fan" => Self::Fan,
+            "devices.types.pet_drinking_fountain" => Self::PetDrinkingFountain,
+            "devices.types.pet_feeder" => Self::PetFeeder,
+            "devices.types.sensor" => Self::Sensor,
+            _ => Self::Other(s),
+        })
+    }
+}
+
+/// Capability type, corresponding to `devices.capabilities.*` values
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum CapabilityType {
+    /// `devices.capabilities.on_off`
+    OnOff,
+    /// `devices.capabilities.color_setting`
+    ColorSetting,
+    /// `devices.capabilities.range`
+    Range,
+    /// `devices.capabilities.mode`
+    Mode,
+    /// `devices.capabilities.toggle`
+    Toggle,
+    /// `devices.capabilities.video_stream`
+    VideoStream,
+    /// Any capability type not yet covered by a named variant
+    Other(String),
+}
+
+impl Serialize for CapabilityType {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        serializer.serialize_str(match self {
+            Self::OnOff => "devices.capabilities.on_off",
+            Self::ColorSetting => "devices.capabilities.color_setting",
+            Self::Range => "devices.capabilities.range",
+            Self::Mode => "devices.capabilities.mode",
+            Self::Toggle => "devices.capabilities.toggle",
+            Self::VideoStream => "devices.capabilities.video_stream",
+            Self::Other(s) => s,
+        })
+    }
+}
+
+impl<'de> Deserialize<'de> for CapabilityType {
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let s = String::deserialize(deserializer)?;
+        Ok(match s.as_str() {
+            "devices.capabilities.on_off" => Self::OnOff,
+            "devices.capabilities.color_setting" => Self::ColorSetting,
+            "devices.capabilities.range" => Self::Range,
+            "devices.capabilities.mode" => Self::Mode,
+            "devices.capabilities.toggle" => Self::Toggle,
+            "devices.capabilities.video_stream" => Self::VideoStream,
+            _ => Self::Other(s),
+        })
+    }
+}
+
+/// Property type, corresponding to `devices.properties.*` values
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum PropertyType {
+    /// `devices.properties.float` — numeric sensor reading
+    Float,
+    /// `devices.properties.event` — discrete event state
+    Event,
+    /// Any property type not yet covered by a named variant
+    Other(String),
+}
+
+impl Serialize for PropertyType {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        serializer.serialize_str(match self {
+            Self::Float => "devices.properties.float",
+            Self::Event => "devices.properties.event",
+            Self::Other(s) => s,
+        })
+    }
+}
+
+impl<'de> Deserialize<'de> for PropertyType {
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let s = String::deserialize(deserializer)?;
+        Ok(match s.as_str() {
+            "devices.properties.float" => Self::Float,
+            "devices.properties.event" => Self::Event,
+            _ => Self::Other(s),
+        })
+    }
+}
+
+/// Capability of a device (includes `reportable` and `last_updated`, unlike group capabilities)
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct DeviceCapability {
+    /// Capability type
+    #[serde(rename = "type")]
+    pub capability_type: CapabilityType,
+    /// Whether the platform is notified of state changes
+    pub reportable: bool,
+    /// Whether the current state can be queried
+    pub retrievable: bool,
+    /// Capability-specific parameters
+    pub parameters: Value,
+    /// Current state (`None` if the state has never been set)
+    pub state: Option<Value>,
+    /// Unix timestamp of the last state update
+    pub last_updated: f64,
+}
+
+/// Property (sensor / read-only state) of a device
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct DeviceProperty {
+    /// Property type
+    #[serde(rename = "type")]
+    pub property_type: PropertyType,
+    /// Whether the platform is notified of state changes
+    pub reportable: bool,
+    /// Whether the current state can be queried
+    pub retrievable: bool,
+    /// Property-specific parameters
+    pub parameters: Value,
+    /// Current state (`None` if the state has never been set)
+    pub state: Option<Value>,
+    /// Unix timestamp of the last state update
+    pub last_updated: f64,
+}
+
+/// Capability of a device group (no `reportable` or `last_updated` per the API spec)
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct GroupCapability {
+    /// Capability type
+    #[serde(rename = "type")]
+    pub capability_type: CapabilityType,
+    /// Whether the current state can be queried
+    pub retrievable: bool,
+    /// Capability-specific parameters
+    pub parameters: Value,
+    /// Current state; `None` when inconsistent across group members
+    pub state: Option<Value>,
+}
+
+/// A device in the user's smart home
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Device {
     /// Unique device ID
     pub id: String,
-    /// User-defined name of the device
+    /// User-defined name
     pub name: String,
-    /// List of additional names for the device
+    /// Additional user-defined names
     pub aliases: Vec<String>,
-    /// Device type (e.g., `devices.types.light`)
+    /// Device type
     #[serde(rename = "type")]
-    pub device_type: String,
+    pub device_type: DeviceType,
     /// ID in the manufacturer's cloud
     pub external_id: String,
     /// ID of the manufacturer's skill
     pub skill_id: String,
-    /// ID of the household the device belongs to
+    /// ID of the household this device belongs to
     pub household_id: String,
-    /// Room ID (can be null if not assigned)
+    /// Room ID (`None` if not assigned to a room)
     pub room: Option<String>,
-    /// List of group IDs the device belongs to
+    /// IDs of groups this device belongs to
     pub groups: Vec<String>,
-    /// List of device capabilities
-    pub capabilities: Vec<Capability>,
-    /// List of device properties
-    pub properties: Vec<Property>,
-}
-
-/// Describes what a device can do (e.g., turn on/off, change color)
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct Capability {
-    /// Capability type
-    #[serde(rename = "type")]
-    pub capability_type: String,
-    /// Whether the capability can be reported to the platform
-    pub reportable: bool,
-    /// Whether the capability state can be retrieved
-    pub retrievable: bool,
-    /// Parameters of the capability
-    pub parameters: Value,
-    /// Current state of the capability
-    pub state: Option<Value>,
-    /// Time of the last state update
-    pub last_updated: f64,
-}
-
-/// Describes device sensors or read-only states (e.g., battery level, temperature)
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct Property {
-    /// Property type
-    #[serde(rename = "type")]
-    pub property_type: String,
-    /// Whether the property can be reported to the platform
-    pub reportable: bool,
-    /// Whether the property state can be retrieved
-    pub retrievable: bool,
-    /// Parameters of the property
-    pub parameters: Value,
-    /// Current state of the property
-    pub state: Option<Value>,
-    /// Time of the last state update
-    pub last_updated: f64,
+    /// Device capabilities
+    pub capabilities: Vec<DeviceCapability>,
+    /// Device properties (sensors / read-only states)
+    pub properties: Vec<DeviceProperty>,
 }

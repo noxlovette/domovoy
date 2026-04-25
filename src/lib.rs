@@ -3,11 +3,13 @@
 use reqwest::{Method, Url};
 
 use crate::error::Res;
+
+/// Error types returned by the client
+pub mod error;
 mod actions;
 mod client;
 mod device;
 mod device_info;
-mod error;
 mod group_info;
 mod simple_response;
 mod user_info;
@@ -19,6 +21,7 @@ pub use device_info::*;
 pub use group_info::*;
 pub use simple_response::*;
 pub use user_info::*;
+
 /// The host for all requests
 pub const HOST: &str = "https://api.iot.yandex.net";
 
@@ -43,7 +46,7 @@ pub enum Endpoint {
         /// The id of the group referred to
         group_id: String,
     },
-    /// Controls scenarios
+    /// Triggers a scenario
     ScenarioActions {
         /// The id of the scenario referred to
         scenario_id: String,
@@ -56,17 +59,17 @@ pub enum Endpoint {
 }
 
 impl Endpoint {
-    /// Returns the method for a specific endpoint
+    /// Returns the HTTP method for this endpoint
     pub fn method(&self) -> Method {
         use Endpoint::*;
-
         match self {
             UserInfo | DeviceStatus { .. } | GroupStatus { .. } => Method::GET,
-            DeviceActions { .. } | GroupActions { .. } | ScenarioActions { .. } => Method::POST,
-            _ => Method::DELETE,
+            DeviceActions | GroupActions { .. } | ScenarioActions { .. } => Method::POST,
+            DeviceDelete { .. } => Method::DELETE,
         }
     }
-    /// Returns the full url for a specific endpoint
+
+    /// Returns the full URL for this endpoint
     pub fn url(&self) -> Res<Url> {
         let mut base = Url::parse(HOST)?;
         let path = match self {
@@ -81,7 +84,6 @@ impl Endpoint {
             }
         };
         base.set_path(&path);
-
         Ok(base)
     }
 }

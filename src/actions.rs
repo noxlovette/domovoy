@@ -1,65 +1,79 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
+use crate::device::CapabilityType;
+use crate::simple_response::ResponseStatus;
+
 /// Request to perform actions on multiple devices
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct DeviceActionRequest {
-    /// List of devices and their target actions
+    /// Devices and the actions to apply to each
     pub devices: Vec<DeviceAction>,
 }
 
-/// Actions for a specific device
+/// Actions targeting a specific device
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct DeviceAction {
     /// Device ID
     pub id: String,
-    /// List of actions to perform
+    /// Actions to perform on this device
     pub actions: Vec<CapabilityAction>,
 }
 
 /// Request to perform actions on all devices in a group
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct GroupActionRequest {
-    /// List of actions to perform
+    /// Actions to apply to every device in the group
     pub actions: Vec<CapabilityAction>,
 }
 
-/// Representation of a target state for a device capability
+/// Target state for a single capability
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct CapabilityAction {
-    /// Capability type (e.g., "devices.capabilities.on_off")
+    /// Capability type
     #[serde(rename = "type")]
-    pub action_type: String,
-    /// Target state
+    pub capability_type: CapabilityType,
+    /// Desired state
     pub state: CapabilityActionState,
 }
 
-/// The specific state instance and value for an action
+/// Instance and value that define the desired capability state
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct CapabilityActionState {
-    /// Capability instance (e.g., "on")
+    /// Capability instance (e.g. `"on"`, `"brightness"`)
     pub instance: String,
     /// New value for the instance
     pub value: Value,
 }
 
-/// Shared response for action requests
+/// Outcome of a single capability action
+#[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq)]
+pub enum ActionStatus {
+    /// State was changed successfully
+    #[serde(rename = "DONE")]
+    Done,
+    /// State change failed
+    #[serde(rename = "ERROR")]
+    Error,
+}
+
+/// Response for device or group action requests
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ActionResponse {
-    /// Processing status (e.g., "ok")
-    pub status: String,
-    /// Unique request identifier for logging
+    /// Processing status
+    pub status: ResponseStatus,
+    /// Unique request identifier for incident investigation
     pub request_id: String,
-    /// Individual results for each affected device
+    /// Per-device action results
     pub devices: Vec<DeviceActionResult>,
 }
 
-/// Result of actions performed on a specific device
+/// Action results for a specific device
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct DeviceActionResult {
     /// Device ID
     pub id: String,
-    /// List of capability action results
+    /// Per-capability action results
     pub capabilities: Vec<CapabilityActionResult>,
 }
 
@@ -68,27 +82,27 @@ pub struct DeviceActionResult {
 pub struct CapabilityActionResult {
     /// Capability type
     #[serde(rename = "type")]
-    pub action_type: String,
-    /// The result of the state change
+    pub capability_type: CapabilityType,
+    /// Outcome of the state change
     pub state: CapabilityActionStateResult,
 }
 
-/// The outcome of an action on a capability instance
+/// Outcome of an action on a capability instance
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct CapabilityActionStateResult {
     /// Capability instance
     pub instance: String,
-    /// Result of the action (status and potential errors)
-    pub action_result: ActionResultStatus,
+    /// Result of the action
+    pub action_result: ActionResult,
 }
 
-/// Status of a specific action
+/// Result of a capability state-change attempt
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct ActionResultStatus {
-    /// Status: "DONE" or "ERROR"
-    pub status: String,
-    /// Error code (if status is "ERROR")
+pub struct ActionResult {
+    /// Whether the action succeeded
+    pub status: ActionStatus,
+    /// Machine-readable error code (present when `status` is `Error`)
     pub error_code: Option<String>,
-    /// Human-readable error message (if status is "ERROR")
+    /// Human-readable error description (present when `status` is `Error`)
     pub error_message: Option<String>,
 }

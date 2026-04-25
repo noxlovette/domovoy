@@ -1,74 +1,72 @@
 use serde::{Deserialize, Serialize};
-use crate::device::Device;
 
-/// Request for full information about the user's smart home
-#[derive(Debug, Serialize, Deserialize, Default)]
-pub struct UserInfoRequest {}
+use crate::device::{Device, DeviceType, GroupCapability};
+use crate::simple_response::ResponseStatus;
 
-/// Response containing full information about the user's smart home
+/// Full information about the user's smart home
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct UserInfoResponse {
-    /// Processing status (e.g., "ok")
-    pub status: String,
-    /// Unique request identifier for logging
+    /// Processing status
+    pub status: ResponseStatus,
+    /// Unique request identifier for incident investigation
     pub request_id: String,
-    /// List of rooms
+    /// Rooms in the household
     pub rooms: Vec<Room>,
-    /// List of groups
+    /// Device groups
     pub groups: Vec<Group>,
-    /// List of devices
+    /// All devices
     pub devices: Vec<Device>,
-    /// List of scenarios
+    /// User-defined scenarios
     pub scenarios: Vec<Scenario>,
-    /// List of households
+    /// Households associated with the account
     pub households: Vec<Household>,
 }
 
-/// Represents a room in the smart home
+/// A room in the smart home
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Room {
     /// Room ID
     pub id: String,
     /// Room name
     pub name: String,
-    /// ID of the household the room belongs to
+    /// ID of the household this room belongs to
     pub household_id: String,
-    /// List of device IDs in this room
+    /// IDs of devices assigned to this room
     pub devices: Vec<String>,
 }
 
-/// Represents a group of devices
+/// A group of devices
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Group {
     /// Group ID
     pub id: String,
     /// Group name
     pub name: String,
-    /// List of additional names for the group
+    /// Additional user-defined names
     pub aliases: Vec<String>,
-    /// Group type (e.g., `devices.types.light`)
+    /// Group type (mirrors the device type of its members)
     #[serde(rename = "type")]
-    pub group_type: String,
-    /// ID of the household the group belongs to
+    pub group_type: DeviceType,
+    /// ID of the household this group belongs to
     pub household_id: String,
-    /// List of device IDs in this group
+    /// IDs of devices in this group
     pub devices: Vec<String>,
-    /// List of group capabilities
-    pub capabilities: Vec<serde_json::Value>,
+    /// Shared capabilities of the group
+    pub capabilities: Vec<GroupCapability>,
 }
 
-/// Represents a scenario
+/// A user-defined scenario
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Scenario {
     /// Scenario ID
     pub id: String,
     /// Scenario name
     pub name: String,
-    /// Whether the scenario is active
+    /// Whether the scenario is currently enabled
     pub is_active: bool,
 }
 
-/// Represents a household
+/// A household associated with the account
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Household {
     /// Household ID
