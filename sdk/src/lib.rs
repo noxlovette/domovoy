@@ -4,6 +4,8 @@ use crate::error::Res;
 use reqwest::{Method, Url};
 
 mod actions;
+/// Typed parameters and state for each capability and property kind
+pub mod capability;
 mod client;
 mod device;
 mod device_info;
@@ -14,6 +16,7 @@ mod simple_response;
 mod user_info;
 
 pub use actions::*;
+pub use capability::*;
 pub use client::*;
 pub use device::*;
 pub use device_info::*;

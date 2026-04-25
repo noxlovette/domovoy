@@ -4,12 +4,12 @@ use crate::{
     tui::dispatcher::ColorAction,
 };
 use keyring::Entry;
-use serde_json::json;
 use tracing::{debug, error};
 use yandex_home_sdk::{
-    CapabilityAction, CapabilityActionState, CapabilityType, Client, Device, DeviceAction,
-    DeviceActionRequest, DeviceType,
+    CapabilityAction, Client, ColorSettingState, Device, DeviceAction, DeviceActionRequest,
+    DeviceCapability, DeviceType, HsvColor,
 };
+
 pub struct Server(Client);
 
 impl Server {
@@ -34,7 +34,7 @@ impl Server {
                 d.device_type == DeviceType::Light
                     && d.capabilities
                         .iter()
-                        .any(|c| c.capability_type == CapabilityType::ColorSetting)
+                        .any(|c| matches!(c, DeviceCapability::ColorSetting { .. }))
             })
             .collect();
         debug!(colour_lights = lights.len(), "filtered colour lights");
@@ -42,19 +42,16 @@ impl Server {
     }
 
     pub async fn set_color(&self, device_id: &str, action: ColorAction) -> Res<()> {
-        let (instance, value) = match action {
-            ColorAction::Rgb(rgb) => ("rgb".to_string(), json!(rgb)),
-            ColorAction::Hsv { h, s, v } => ("hsv".to_string(), json!({"h": h, "s": s, "v": v})),
-            ColorAction::Temperature(k) => ("temperature_k".to_string(), json!(k)),
+        let state = match action {
+            ColorAction::Rgb(rgb) => ColorSettingState::Rgb(rgb),
+            ColorAction::Hsv { h, s, v } => ColorSettingState::Hsv(HsvColor { h, s, v }),
+            ColorAction::Temperature(k) => ColorSettingState::TemperatureK(k),
         };
-        debug!(device_id, %instance, "sending colour action");
+        debug!(device_id, "sending colour action");
         let request = DeviceActionRequest {
             devices: vec![DeviceAction {
                 id: device_id.to_string(),
-                actions: vec![CapabilityAction {
-                    capability_type: CapabilityType::ColorSetting,
-                    state: CapabilityActionState { instance, value },
-                }],
+                actions: vec![CapabilityAction::ColorSetting { state }],
             }],
         };
         let result = self.0.device_actions(&request).await.map_err(|e| {

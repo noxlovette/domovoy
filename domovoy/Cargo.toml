@@ -19,7 +19,6 @@ tracing.workspace = true
 sqlx = { version = "0.8.6", features = ["sqlite"] }
 tokio = { version = "1.52.1", features = ["macros", "rt-multi-thread"] }
 anyhow = "1.0.102"
-serde_json = "1"
 rpassword = "7.4.0"
 owo-colors = "4.3.0"
 indicatif = "0.18.4"

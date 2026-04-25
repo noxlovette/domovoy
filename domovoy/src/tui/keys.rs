@@ -1,6 +1,5 @@
-use crossterm::event::KeyCode;
-
 use crate::tui::{App, Screen};
+use crossterm::event::KeyCode;
 
 impl App {
     pub fn handle_device_keys(&mut self, code: KeyCode) {

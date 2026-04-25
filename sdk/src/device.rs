@@ -1,5 +1,11 @@
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use serde_json::Value;
+
+use crate::capability::{
+    ColorModel, ColorSettingParameters, ColorSettingState, EventPropertyParameters,
+    EventPropertyState, FloatPropertyParameters, FloatPropertyState, ModeParameters, ModeState,
+    OnOffParameters, OnOffState, RangeParameters, RangeState, TemperatureRange, ToggleParameters,
+    ToggleState, VideoStreamParameters,
+};
 
 /// Device type, corresponding to `devices.types.*` values in the Yandex Smart Home API
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -118,7 +124,7 @@ impl<'de> Deserialize<'de> for DeviceType {
     }
 }
 
-/// Capability type, corresponding to `devices.capabilities.*` values
+/// Capability type — kept for use in action result responses.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum CapabilityType {
     /// `devices.capabilities.on_off`
@@ -166,140 +172,247 @@ impl<'de> Deserialize<'de> for CapabilityType {
     }
 }
 
-/// Property type, corresponding to `devices.properties.*` values
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum PropertyType {
-    /// `devices.properties.float` — numeric sensor reading
-    Float,
-    /// `devices.properties.event` — discrete event state
-    Event,
-    /// Any property type not yet covered by a named variant
-    Other(String),
-}
-
-impl Serialize for PropertyType {
-    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        serializer.serialize_str(match self {
-            Self::Float => "devices.properties.float",
-            Self::Event => "devices.properties.event",
-            Self::Other(s) => s,
-        })
-    }
-}
-
-impl<'de> Deserialize<'de> for PropertyType {
-    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
-        let s = String::deserialize(deserializer)?;
-        Ok(match s.as_str() {
-            "devices.properties.float" => Self::Float,
-            "devices.properties.event" => Self::Event,
-            _ => Self::Other(s),
-        })
-    }
-}
-
-/// Capability of a device (includes `reportable` and `last_updated`, unlike group capabilities)
+/// Capability of a device.
+///
+/// Each variant encodes both the capability type (via the `#[serde(tag = "type")]` field)
+/// and its typed `parameters` and `state`.  Unknown types deserialize to `Unknown` and
+/// their payload is discarded.
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct DeviceCapability {
-    /// Capability type
-    #[serde(rename = "type")]
-    pub capability_type: CapabilityType,
-    /// Whether the platform is notified of state changes
-    pub reportable: bool,
-    /// Whether the current state can be queried
-    pub retrievable: bool,
-    /// Capability-specific parameters
-    pub parameters: Value,
-    /// Current state (`None` if the state has never been set)
-    pub state: Option<Value>,
-    /// Unix timestamp of the last state update
-    pub last_updated: f64,
+#[serde(tag = "type")]
+pub enum DeviceCapability {
+    /// Remote power control (`devices.capabilities.on_off`).
+    #[serde(rename = "devices.capabilities.on_off")]
+    OnOff {
+        /// Platform is notified when the state changes.
+        reportable: bool,
+        /// Current state can be queried.
+        retrievable: bool,
+        /// Capability parameters.
+        parameters: OnOffParameters,
+        /// Current state (`None` if never reported).
+        #[serde(default)]
+        state: Option<OnOffState>,
+        /// Unix timestamp of the last state update.
+        last_updated: f64,
+    },
+    /// Colour and colour-temperature control (`devices.capabilities.color_setting`).
+    #[serde(rename = "devices.capabilities.color_setting")]
+    ColorSetting {
+        /// Platform is notified when the state changes.
+        reportable: bool,
+        /// Current state can be queried.
+        retrievable: bool,
+        /// Supported colour models and temperature range.
+        parameters: ColorSettingParameters,
+        /// Current colour state (`None` if never reported).
+        #[serde(default)]
+        state: Option<ColorSettingState>,
+        /// Unix timestamp of the last state update.
+        last_updated: f64,
+    },
+    /// Numeric range control (`devices.capabilities.range`).
+    #[serde(rename = "devices.capabilities.range")]
+    Range {
+        /// Platform is notified when the state changes.
+        reportable: bool,
+        /// Current state can be queried.
+        retrievable: bool,
+        /// Instance name, unit, and allowed range.
+        parameters: RangeParameters,
+        /// Current value (`None` if never reported).
+        #[serde(default)]
+        state: Option<RangeState>,
+        /// Unix timestamp of the last state update.
+        last_updated: f64,
+    },
+    /// Operational mode selection (`devices.capabilities.mode`).
+    #[serde(rename = "devices.capabilities.mode")]
+    Mode {
+        /// Platform is notified when the state changes.
+        reportable: bool,
+        /// Current state can be queried.
+        retrievable: bool,
+        /// Instance name and supported modes.
+        parameters: ModeParameters,
+        /// Active mode (`None` if never reported).
+        #[serde(default)]
+        state: Option<ModeState>,
+        /// Unix timestamp of the last state update.
+        last_updated: f64,
+    },
+    /// Binary feature toggle (`devices.capabilities.toggle`).
+    #[serde(rename = "devices.capabilities.toggle")]
+    Toggle {
+        /// Platform is notified when the state changes.
+        reportable: bool,
+        /// Current state can be queried.
+        retrievable: bool,
+        /// Instance name.
+        parameters: ToggleParameters,
+        /// Current toggle state (`None` if never reported).
+        #[serde(default)]
+        state: Option<ToggleState>,
+        /// Unix timestamp of the last state update.
+        last_updated: f64,
+    },
+    /// Live video stream (`devices.capabilities.video_stream`).
+    #[serde(rename = "devices.capabilities.video_stream")]
+    VideoStream {
+        /// Platform is notified when the state changes.
+        reportable: bool,
+        /// Current state can be queried (always `false` for video streams).
+        retrievable: bool,
+        /// Supported streaming protocols.
+        parameters: VideoStreamParameters,
+        /// Unix timestamp of the last state update.
+        last_updated: f64,
+    },
+    /// Any capability type not recognised by this library version.
+    #[serde(other)]
+    Unknown,
 }
 
-/// Property (sensor / read-only state) of a device
+/// Capability of a device group (no `reportable` or `last_updated` per the API spec).
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct DeviceProperty {
-    /// Property type
-    #[serde(rename = "type")]
-    pub property_type: PropertyType,
-    /// Whether the platform is notified of state changes
-    pub reportable: bool,
-    /// Whether the current state can be queried
-    pub retrievable: bool,
-    /// Property-specific parameters
-    pub parameters: Value,
-    /// Current state (`None` if the state has never been set)
-    pub state: Option<Value>,
-    /// Unix timestamp of the last state update
-    pub last_updated: f64,
+#[serde(tag = "type")]
+pub enum GroupCapability {
+    /// Remote power control (`devices.capabilities.on_off`).
+    #[serde(rename = "devices.capabilities.on_off")]
+    OnOff {
+        /// Current state can be queried.
+        retrievable: bool,
+        /// Capability parameters.
+        parameters: OnOffParameters,
+        /// Current state (`None` if inconsistent across group members).
+        #[serde(default)]
+        state: Option<OnOffState>,
+    },
+    /// Colour and colour-temperature control (`devices.capabilities.color_setting`).
+    #[serde(rename = "devices.capabilities.color_setting")]
+    ColorSetting {
+        /// Current state can be queried.
+        retrievable: bool,
+        /// Supported colour models and temperature range.
+        parameters: ColorSettingParameters,
+        /// Current colour state (`None` if inconsistent across group members).
+        #[serde(default)]
+        state: Option<ColorSettingState>,
+    },
+    /// Numeric range control (`devices.capabilities.range`).
+    #[serde(rename = "devices.capabilities.range")]
+    Range {
+        /// Current state can be queried.
+        retrievable: bool,
+        /// Instance name, unit, and allowed range.
+        parameters: RangeParameters,
+        /// Current value (`None` if inconsistent across group members).
+        #[serde(default)]
+        state: Option<RangeState>,
+    },
+    /// Operational mode selection (`devices.capabilities.mode`).
+    #[serde(rename = "devices.capabilities.mode")]
+    Mode {
+        /// Current state can be queried.
+        retrievable: bool,
+        /// Instance name and supported modes.
+        parameters: ModeParameters,
+        /// Active mode (`None` if inconsistent across group members).
+        #[serde(default)]
+        state: Option<ModeState>,
+    },
+    /// Binary feature toggle (`devices.capabilities.toggle`).
+    #[serde(rename = "devices.capabilities.toggle")]
+    Toggle {
+        /// Current state can be queried.
+        retrievable: bool,
+        /// Instance name.
+        parameters: ToggleParameters,
+        /// Current toggle state (`None` if inconsistent across group members).
+        #[serde(default)]
+        state: Option<ToggleState>,
+    },
+    /// Live video stream (`devices.capabilities.video_stream`).
+    #[serde(rename = "devices.capabilities.video_stream")]
+    VideoStream {
+        /// Current state can be queried (always `false` for video streams).
+        retrievable: bool,
+        /// Supported streaming protocols.
+        parameters: VideoStreamParameters,
+    },
+    /// Any capability type not recognised by this library version.
+    #[serde(other)]
+    Unknown,
 }
 
-/// Capability of a device group (no `reportable` or `last_updated` per the API spec)
+/// Property (sensor / read-only state) of a device.
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct GroupCapability {
-    /// Capability type
-    #[serde(rename = "type")]
-    pub capability_type: CapabilityType,
-    /// Whether the current state can be queried
-    pub retrievable: bool,
-    /// Capability-specific parameters
-    pub parameters: Value,
-    /// Current state; `None` when inconsistent across group members
-    pub state: Option<Value>,
+#[serde(tag = "type")]
+pub enum DeviceProperty {
+    /// Numeric sensor reading (`devices.properties.float`).
+    #[serde(rename = "devices.properties.float")]
+    Float {
+        /// Platform is notified when the value changes.
+        reportable: bool,
+        /// Current value can be queried.
+        retrievable: bool,
+        /// Sensor type and unit.
+        parameters: FloatPropertyParameters,
+        /// Last reported value (`None` if never reported).
+        #[serde(default)]
+        state: Option<FloatPropertyState>,
+        /// Unix timestamp of the last state update.
+        last_updated: f64,
+    },
+    /// Discrete event sensor (`devices.properties.event`).
+    #[serde(rename = "devices.properties.event")]
+    Event {
+        /// Platform is notified when the event fires.
+        reportable: bool,
+        /// Current state can be queried.
+        retrievable: bool,
+        /// Sensor type and possible event values.
+        parameters: EventPropertyParameters,
+        /// Last reported event (`None` if never reported).
+        #[serde(default)]
+        state: Option<EventPropertyState>,
+        /// Unix timestamp of the last state update.
+        last_updated: f64,
+    },
+    /// Any property type not recognised by this library version.
+    #[serde(other)]
+    Unknown,
 }
 
-/// Kelvin range reported by a device's `color_setting` capability.
-#[derive(Debug, Clone)]
-pub struct TemperatureRange {
-    /// Minimum supported colour temperature in Kelvin.
-    pub min: u32,
-    /// Maximum supported colour temperature in Kelvin.
-    pub max: u32,
-}
-
-/// What colour control mode(s) a device actually supports.
+/// Colour control modes a device supports, derived from its `color_setting` parameters.
 #[derive(Debug, Clone)]
 pub enum ColorMode {
-    /// 24-bit packed RGB via the `rgb` instance.
+    /// RGB via the `rgb` instance (packed 24-bit integer).
     Rgb,
-    /// HSV via the `hsv` instance (`{h, s, v}`).
+    /// HSV via the `hsv` instance.
     Hsv,
-    /// Colour temperature only, via the `temperature_k` instance.
+    /// Colour temperature only via `temperature_k`.
     Temperature(TemperatureRange),
-    /// Both RGB and colour temperature.
+    /// RGB and colour temperature.
     RgbAndTemperature(TemperatureRange),
-    /// Both HSV and colour temperature.
+    /// HSV and colour temperature.
     HsvAndTemperature(TemperatureRange),
 }
 
-/// Inspect a device's `color_setting` capability parameters and return
-/// which mode(s) it supports, or `None` if the device has no usable colour control.
+/// Inspect a device's `color_setting` capability and return the colour mode(s) it supports,
+/// or `None` if the device has no usable colour control.
 pub fn color_mode(device: &Device) -> Option<ColorMode> {
-    let cap = device
-        .capabilities
-        .iter()
-        .find(|c| c.capability_type == CapabilityType::ColorSetting)?;
+    let params = device.capabilities.iter().find_map(|c| match c {
+        DeviceCapability::ColorSetting { parameters, .. } => Some(parameters),
+        _ => None,
+    })?;
 
-    let model = cap
-        .parameters
-        .get("color_model")
-        .and_then(|v| v.as_str())
-        .unwrap_or("");
-
-    let temp = cap.parameters.get("temperature_k").and_then(|t| {
-        Some(TemperatureRange {
-            min: t.get("min")?.as_u64()? as u32,
-            max: t.get("max")?.as_u64()? as u32,
-        })
-    });
-
-    Some(match (model, temp) {
-        ("rgb", Some(r)) => ColorMode::RgbAndTemperature(r),
-        ("rgb", None)    => ColorMode::Rgb,
-        ("hsv", Some(r)) => ColorMode::HsvAndTemperature(r),
-        ("hsv", None)    => ColorMode::Hsv,
-        (_,     Some(r)) => ColorMode::Temperature(r),
-        _                => return None,
+    Some(match (&params.color_model, &params.temperature_k) {
+        (Some(ColorModel::Rgb), Some(r)) => ColorMode::RgbAndTemperature(r.clone()),
+        (Some(ColorModel::Rgb), None) => ColorMode::Rgb,
+        (Some(ColorModel::Hsv), Some(r)) => ColorMode::HsvAndTemperature(r.clone()),
+        (Some(ColorModel::Hsv), None) => ColorMode::Hsv,
+        (_, Some(r)) => ColorMode::Temperature(r.clone()),
+        _ => return None,
     })
 }
 

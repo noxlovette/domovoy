@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
 
+use crate::capability::{
+    ColorSettingState, ModeState, OnOffState, RangeActionState, ToggleState, VideoStreamActionState,
+};
 use crate::device::CapabilityType;
 use crate::simple_response::ResponseStatus;
 
@@ -27,23 +29,52 @@ pub struct GroupActionRequest {
     pub actions: Vec<CapabilityAction>,
 }
 
-/// Target state for a single capability
+/// Typed capability action.  The `"type"` field in the serialized JSON is derived from
+/// the enum variant; each variant carries its own typed state.
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct CapabilityAction {
-    /// Capability type
-    #[serde(rename = "type")]
-    pub capability_type: CapabilityType,
-    /// Desired state
-    pub state: CapabilityActionState,
-}
+#[serde(tag = "type")]
+pub enum CapabilityAction {
+    /// Remote power control (`devices.capabilities.on_off`).
+    #[serde(rename = "devices.capabilities.on_off")]
+    OnOff {
+        /// Desired power state.
+        state: OnOffState,
+    },
 
-/// Instance and value that define the desired capability state
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct CapabilityActionState {
-    /// Capability instance (e.g. `"on"`, `"brightness"`)
-    pub instance: String,
-    /// New value for the instance
-    pub value: Value,
+    /// Colour or colour-temperature control (`devices.capabilities.color_setting`).
+    #[serde(rename = "devices.capabilities.color_setting")]
+    ColorSetting {
+        /// Desired colour state.
+        state: ColorSettingState,
+    },
+
+    /// Numeric range control (`devices.capabilities.range`).
+    #[serde(rename = "devices.capabilities.range")]
+    Range {
+        /// Desired value and optional relative flag.
+        state: RangeActionState,
+    },
+
+    /// Operational mode selection (`devices.capabilities.mode`).
+    #[serde(rename = "devices.capabilities.mode")]
+    Mode {
+        /// Desired mode.
+        state: ModeState,
+    },
+
+    /// Binary feature toggle (`devices.capabilities.toggle`).
+    #[serde(rename = "devices.capabilities.toggle")]
+    Toggle {
+        /// Desired toggle state.
+        state: ToggleState,
+    },
+
+    /// Request a live video stream (`devices.capabilities.video_stream`).
+    #[serde(rename = "devices.capabilities.video_stream")]
+    VideoStream {
+        /// Stream request containing accepted protocols.
+        state: VideoStreamActionState,
+    },
 }
 
 /// Outcome of a single capability action
