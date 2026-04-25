@@ -1,0 +1,12 @@
+[package]
+name = "yandex-home-sdk"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+reqwest = { version = "0.13.2", features = ["json"] }
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "2.0.18"
+tracing = "0.1.44"
+url = "2.5.8"
