@@ -18,4 +18,7 @@ pub enum Error {
     /// The OAuth token could not be used as an HTTP header value
     #[error("Invalid authentication token.")]
     AuthToken,
+    /// The API returned a non-2xx HTTP status; body contains the raw response
+    #[error("API error: {0}")]
+    ApiError(String),
 }

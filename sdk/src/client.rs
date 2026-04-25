@@ -99,6 +99,10 @@ impl Client {
             .await
             .inspect_err(|e| error!(error = %e, "failed to read response body"))?;
         debug!(body = %text, "raw response body");
+        if !status.is_success() {
+            error!(body = %text, "API returned HTTP error");
+            return Err(Error::ApiError(text));
+        }
         let body: ActionResponse = serde_json::from_str(&text)
             .inspect_err(|e| error!(error = %e, "failed to deserialise response"))?;
         if body.status == ResponseStatus::Error {
