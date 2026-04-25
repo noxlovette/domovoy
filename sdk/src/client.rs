@@ -59,7 +59,9 @@ impl Client {
     /// Calls `GET /v1.0/devices/{device_id}`.
     #[instrument(skip(self))]
     pub async fn device_info(&self, device_id: &str) -> Res<DeviceInfoResponse> {
-        let ep = Endpoint::DeviceStatus { device_id: device_id.to_string() };
+        let ep = Endpoint::DeviceStatus {
+            device_id: device_id.to_string(),
+        };
         let method = ep.method();
         let url = ep.url()?;
         debug!(%method, %url, "sending request");
@@ -118,7 +120,9 @@ impl Client {
     /// Calls `GET /v1.0/groups/{group_id}`.
     #[instrument(skip(self))]
     pub async fn group_info(&self, group_id: &str) -> Res<GroupInfoResponse> {
-        let ep = Endpoint::GroupStatus { group_id: group_id.to_string() };
+        let ep = Endpoint::GroupStatus {
+            group_id: group_id.to_string(),
+        };
         let method = ep.method();
         let url = ep.url()?;
         debug!(%method, %url, "sending request");
@@ -144,7 +148,9 @@ impl Client {
         group_id: &str,
         request: &GroupActionRequest,
     ) -> Res<ActionResponse> {
-        let ep = Endpoint::GroupActions { group_id: group_id.to_string() };
+        let ep = Endpoint::GroupActions {
+            group_id: group_id.to_string(),
+        };
         let method = ep.method();
         let url = ep.url()?;
         debug!(%method, %url, "sending request");
@@ -173,7 +179,9 @@ impl Client {
     /// Calls `POST /v1.0/scenarios/{scenario_id}/actions`.
     #[instrument(skip(self))]
     pub async fn scenario_trigger(&self, scenario_id: &str) -> Res<SimpleResponse> {
-        let ep = Endpoint::ScenarioActions { scenario_id: scenario_id.to_string() };
+        let ep = Endpoint::ScenarioActions {
+            scenario_id: scenario_id.to_string(),
+        };
         let method = ep.method();
         let url = ep.url()?;
         debug!(%method, %url, "sending request");
@@ -201,7 +209,9 @@ impl Client {
     /// Calls `DELETE /v1.0/devices/{device_id}`.
     #[instrument(skip(self))]
     pub async fn device_delete(&self, device_id: &str) -> Res<SimpleResponse> {
-        let ep = Endpoint::DeviceDelete { device_id: device_id.to_string() };
+        let ep = Endpoint::DeviceDelete {
+            device_id: device_id.to_string(),
+        };
         let method = ep.method();
         let url = ep.url()?;
         debug!(%method, %url, "sending request");

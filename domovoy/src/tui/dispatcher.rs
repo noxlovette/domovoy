@@ -14,3 +14,10 @@ struct Store {
 enum Action {
     DevicesLoaded { devices: Vec<Device> },
 }
+
+#[derive(Clone)]
+pub enum ColorAction {
+    Rgb(u32),
+    Hsv { h: u16, s: u8, v: u8 },
+    Temperature(u32),
+}

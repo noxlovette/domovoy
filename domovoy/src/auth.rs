@@ -2,7 +2,7 @@ use keyring::Entry;
 use owo_colors::OwoColorize;
 
 const CLIENT_ID: &'static str = env!("YANDEX_CLIENT_ID");
-const CLIENT_SECRET: &'static str = env!("YANDEX_CLIENT_SECRET");
+// const CLIENT_SECRET: &'static str = env!("YANDEX_CLIENT_SECRET");
 pub const SERVICE: &str = "domovoy";
 pub const NAME: &str = "oauth_token";
 

@@ -1,9 +1,5 @@
-use std::{
-    default,
-    io::{self, Write},
-};
-
 use clap::{Parser, Subcommand};
+use std::io::{self, Write};
 
 #[derive(Parser)]
 #[command(version, about)]

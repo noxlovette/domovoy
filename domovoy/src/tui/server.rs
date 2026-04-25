@@ -1,6 +1,7 @@
 use crate::{
     Error, Res,
     auth::{NAME, SERVICE},
+    tui::dispatcher::ColorAction,
 };
 use keyring::Entry;
 use serde_json::json;
@@ -9,61 +10,7 @@ use yandex_home_sdk::{
     CapabilityAction, CapabilityActionState, CapabilityType, Client, Device, DeviceAction,
     DeviceActionRequest, DeviceType,
 };
-
 pub struct Server(Client);
-
-#[derive(Debug, Clone)]
-pub struct TemperatureRange {
-    pub min: u32,
-    pub max: u32,
-}
-
-#[derive(Debug, Clone)]
-pub enum ColorMode {
-    Rgb,
-    Hsv,
-    Temperature(TemperatureRange),
-    RgbAndTemperature(TemperatureRange),
-    HsvAndTemperature(TemperatureRange),
-}
-
-pub fn color_mode(device: &Device) -> Option<ColorMode> {
-    let cap = device
-        .capabilities
-        .iter()
-        .find(|c| c.capability_type == CapabilityType::ColorSetting)?;
-
-    let model = cap
-        .parameters
-        .get("color_model")
-        .and_then(|v| v.as_str())
-        .unwrap_or("");
-
-    let temp = cap.parameters.get("temperature_k").and_then(|t| {
-        Some(TemperatureRange {
-            min: t.get("min")?.as_u64()? as u32,
-            max: t.get("max")?.as_u64()? as u32,
-        })
-    });
-
-    debug!(device = %device.name, model, has_temp = temp.is_some(), "parsed colour mode");
-
-    Some(match (model, temp) {
-        ("rgb", Some(r)) => ColorMode::RgbAndTemperature(r),
-        ("rgb", None) => ColorMode::Rgb,
-        ("hsv", Some(r)) => ColorMode::HsvAndTemperature(r),
-        ("hsv", None) => ColorMode::Hsv,
-        (_, Some(r)) => ColorMode::Temperature(r),
-        _ => return None,
-    })
-}
-
-#[derive(Clone)]
-pub enum ColorAction {
-    Rgb(u32),
-    Hsv { h: u16, s: u8, v: u8 },
-    Temperature(u32),
-}
 
 impl Server {
     pub fn new() -> Res<Self> {

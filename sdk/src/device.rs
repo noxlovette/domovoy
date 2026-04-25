@@ -248,6 +248,61 @@ pub struct GroupCapability {
     pub state: Option<Value>,
 }
 
+/// Kelvin range reported by a device's `color_setting` capability.
+#[derive(Debug, Clone)]
+pub struct TemperatureRange {
+    /// Minimum supported colour temperature in Kelvin.
+    pub min: u32,
+    /// Maximum supported colour temperature in Kelvin.
+    pub max: u32,
+}
+
+/// What colour control mode(s) a device actually supports.
+#[derive(Debug, Clone)]
+pub enum ColorMode {
+    /// 24-bit packed RGB via the `rgb` instance.
+    Rgb,
+    /// HSV via the `hsv` instance (`{h, s, v}`).
+    Hsv,
+    /// Colour temperature only, via the `temperature_k` instance.
+    Temperature(TemperatureRange),
+    /// Both RGB and colour temperature.
+    RgbAndTemperature(TemperatureRange),
+    /// Both HSV and colour temperature.
+    HsvAndTemperature(TemperatureRange),
+}
+
+/// Inspect a device's `color_setting` capability parameters and return
+/// which mode(s) it supports, or `None` if the device has no usable colour control.
+pub fn color_mode(device: &Device) -> Option<ColorMode> {
+    let cap = device
+        .capabilities
+        .iter()
+        .find(|c| c.capability_type == CapabilityType::ColorSetting)?;
+
+    let model = cap
+        .parameters
+        .get("color_model")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+
+    let temp = cap.parameters.get("temperature_k").and_then(|t| {
+        Some(TemperatureRange {
+            min: t.get("min")?.as_u64()? as u32,
+            max: t.get("max")?.as_u64()? as u32,
+        })
+    });
+
+    Some(match (model, temp) {
+        ("rgb", Some(r)) => ColorMode::RgbAndTemperature(r),
+        ("rgb", None)    => ColorMode::Rgb,
+        ("hsv", Some(r)) => ColorMode::HsvAndTemperature(r),
+        ("hsv", None)    => ColorMode::Hsv,
+        (_,     Some(r)) => ColorMode::Temperature(r),
+        _                => return None,
+    })
+}
+
 /// A device in the user's smart home
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Device {
