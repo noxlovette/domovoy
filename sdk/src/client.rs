@@ -92,10 +92,14 @@ impl Client {
             .send()
             .await
             .inspect_err(|e| error!(error = %e, "transport error"))?;
-        debug!(status = %response.status(), "received response");
-        let body: ActionResponse = response
-            .json()
+        let status = response.status();
+        debug!(%status, "received response");
+        let text = response
+            .text()
             .await
+            .inspect_err(|e| error!(error = %e, "failed to read response body"))?;
+        debug!(body = %text, "raw response body");
+        let body: ActionResponse = serde_json::from_str(&text)
             .inspect_err(|e| error!(error = %e, "failed to deserialise response"))?;
         if body.status == ResponseStatus::Error {
             warn!(request_id = %body.request_id, "API returned error status");

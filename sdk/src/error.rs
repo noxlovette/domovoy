@@ -12,6 +12,9 @@ pub enum Error {
     /// HTTP transport error from `reqwest`
     #[error("Reqwest error: {0}")]
     Reqwest(#[from] reqwest::Error),
+    /// Failed to deserialize the API response
+    #[error("JSON error: {0}")]
+    Json(#[from] serde_json::Error),
     /// The OAuth token could not be used as an HTTP header value
     #[error("Invalid authentication token.")]
     AuthToken,

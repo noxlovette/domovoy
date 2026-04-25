@@ -1,4 +1,7 @@
-use std::io::{self, Write};
+use std::{
+    default,
+    io::{self, Write},
+};
 
 use clap::{Parser, Subcommand};
 
@@ -13,6 +16,7 @@ pub struct Cli {
 pub enum Commands {
     Auth,
     Reset,
+    Tui,
 }
 
 pub fn prompt(msg: &str) -> Result<String, io::Error> {
