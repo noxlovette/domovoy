@@ -1,15 +1,14 @@
 #![warn(missing_docs)]
 //! The domovoy library
+use crate::error::Res;
 use reqwest::{Method, Url};
 
-use crate::error::Res;
-
-/// Error types returned by the client
-pub mod error;
 mod actions;
 mod client;
 mod device;
 mod device_info;
+/// Error types returned by the client
+pub mod error;
 mod group_info;
 mod simple_response;
 mod user_info;
